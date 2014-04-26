@@ -12,7 +12,8 @@ namespace JungleLib
     public class Jungle
     {
         private static bool initJungleMobs = false;
-        private static JungleMobs[] jungleMobs = new JungleMobs[12];
+        private static List<JungleMobs> jungleMobs = new List<JungleMobs>();
+        private static List<JungleCamps> jungleCamps= new List<JungleCamps>();
         private static List<Obj_AI_Minion> jungleMobList = new List<Obj_AI_Minion>();
 
         public class JungleMobs
@@ -29,6 +30,31 @@ namespace JungleLib
             public bool buff;
         }
 
+        public class JungleCamps
+        {
+            public JungleCamps(String name, GameObjectTeam team, int campID, int spawnTime, int respawnTime, Vector3 mapPosition, Vector3 minimapPosition, JungleMobs[] creeps)
+            {
+                this.name = name;
+                this.team = team;
+                this.campID = campID;
+                this.spawnTime = spawnTime;
+                this.respawnTime = respawnTime;
+                this.mapPosition = mapPosition;
+                this.minimapPosition = minimapPosition;
+                this.creeps = creeps;
+                nextRespawnTime = 0;
+            }
+
+            public String name;
+            public GameObjectTeam team;
+            public int campID;
+            public int spawnTime;
+            public int respawnTime;
+            public int nextRespawnTime;
+            public Vector3 mapPosition;
+            public Vector3 minimapPosition;
+            public JungleMobs[] creeps;
+        }
 
         protected static void DebugMode()
         {
@@ -109,6 +135,19 @@ namespace JungleLib
             return jungleMobs;
         }
 
+        public static List<JungleCamps> GetAvailableJungleCamps()
+        {
+            List<JungleCamps> jungleCamps1= new List<JungleCamps>();
+            foreach (JungleCamps jungleCamp in jungleCamps)
+            {
+                if (jungleCamp.nextRespawnTime == 0)
+                {
+                    jungleCamps1.Add(jungleCamp);
+                }
+            }
+            return jungleCamps1;
+        }
+
         static void Obj_AI_Base_OnCreate(GameObject sender, EventArgs args)
         {
             if (sender.IsValid && sender.Type == GameObjectType.obj_AI_Minion
@@ -118,28 +157,137 @@ namespace JungleLib
             }
         }
 
+        private static JungleMobs GetJungleMobByName(string name)
+        {
+            return jungleMobs.Find(delegate(JungleMobs JM)
+                {
+                    return JM.name == name;
+                });
+        }
+
+        private static JungleCamps GetJungleCampByID(int id)
+        {
+            return jungleCamps.Find(delegate(JungleCamps JM)
+            {
+                return JM.campID == id;
+            });
+        }
+
+        private static void UpdateCamps(int networkID, int campID, byte emptyType)
+        {
+            if (emptyType != 3)
+            {
+                JungleCamps jungleCamp = GetJungleCampByID(campID);
+                if (jungleCamp != null)
+                {
+                    jungleCamp.nextRespawnTime = (int)Game.Time + jungleCamp.respawnTime;
+                }
+            }
+        }
+
         public static void InitJungleMobs()
         {
             if (initJungleMobs)
                 return;
             Obj_AI_Base.OnCreate += Obj_AI_Base_OnCreate;
+            Game.OnGameProcessPacket += Game_OnGameProcessPacket;
+            Game.OnGameUpdate += Game_OnGameUpdate;
             foreach (Obj_AI_Minion objAiMinion in ObjectManager.Get<Obj_AI_Minion>())
             {
                 Obj_AI_Base_OnCreate(objAiMinion, new EventArgs());
             }
-            jungleMobs[0] =  new JungleMobs("GreatWraith",  true,   false);
-            jungleMobs[1] =  new JungleMobs("AncientGolem", true,   true);
-            jungleMobs[2] =  new JungleMobs("GiantWolf",    true,   false);
-            jungleMobs[3] =  new JungleMobs("Wraith",       true,   false);
-            jungleMobs[4] =  new JungleMobs("LizardElder",  true,   true);
-            jungleMobs[5] =  new JungleMobs("Golem",        true,   false);
-            jungleMobs[6] =  new JungleMobs("Worm",         true,   true);
-            jungleMobs[7] =  new JungleMobs("Dragon",       true,   false);
-            jungleMobs[8] =  new JungleMobs("YoungLizard",  false,  false);
-            jungleMobs[9] =  new JungleMobs("Wolf",         false,  false);
-            jungleMobs[10] = new JungleMobs("LesserWraith", false,  false);
-            jungleMobs[11] = new JungleMobs("Golem",        false,  false);
+            jungleMobs.Add(new JungleMobs("GreatWraith",    true,   false));
+            jungleMobs.Add(new JungleMobs("AncientGolem",   true,   true));
+            jungleMobs.Add(new JungleMobs("GiantWolf",      true,   false));
+            jungleMobs.Add(new JungleMobs("Wraith",         true,   false));
+            jungleMobs.Add(new JungleMobs("LizardElder",    true,   true));
+            jungleMobs.Add(new JungleMobs("Golem",          true,   false));
+            jungleMobs.Add(new JungleMobs("Worm",           true,   true));
+            jungleMobs.Add(new JungleMobs("Dragon",         true,   false));
+            jungleMobs.Add(new JungleMobs("Wight",          true,   false));
+            jungleMobs.Add(new JungleMobs("YoungLizard",    false,  false));
+            jungleMobs.Add(new JungleMobs("Wolf",           false,  false));
+            jungleMobs.Add(new JungleMobs("LesserWraith",   false,  false));
+            jungleMobs.Add(new JungleMobs("SmallGolem",     false,  false));
+
+            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Order, 1, 115, 300, new Vector3(3570, 7670, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Order, 2, 125, 50, new Vector3(3430, 6300, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
+            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Order, 3, 125, 50, new Vector3(6540, 5230, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
+            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Order, 4, 115, 300, new Vector3(7370, 3830, 58), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Order, 5, 125, 50, new Vector3(7990, 2550, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
+            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Order, 13, 125, 50, new Vector3(12266, 6215, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
+            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Chaos, 7, 115, 300, new Vector3(10455, 6800, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Chaos, 8, 125, 50, new Vector3(10570, 8150, 63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
+            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Chaos, 9, 125, 50, new Vector3(7465, 9220, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
+            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Chaos, 10, 115, 300, new Vector3(6620, 10637, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Chaos, 11, 125, 50, new Vector3(6010, 11920, 40), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
+            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Chaos, 14, 125, 50, new Vector3(1688, 8248, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
+            jungleCamps.Add(new JungleCamps("dragon", GameObjectTeam.Neutral, 6, 2 * 60 + 30, 360, new Vector3(9400, 4130, -61), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Dragon") }));
+            jungleCamps.Add(new JungleCamps("nashor", GameObjectTeam.Neutral, 12, 15 * 60, 420, new Vector3(4620, 10265, -63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Worm") }));
+
+            foreach (JungleCamps jungleCamp in jungleCamps)
+            {
+                int nextRespawnTime = jungleCamp.spawnTime - (int)Game.Time;
+                if (nextRespawnTime > 0)
+                {
+                    jungleCamp.nextRespawnTime = nextRespawnTime;
+                }
+            }
+
             initJungleMobs = true;
+        }
+
+        static void Game_OnGameUpdate(EventArgs args)
+        {
+            foreach (JungleCamps jungleCamp in jungleCamps)
+            {
+                if ((jungleCamp.nextRespawnTime - (int)Game.Time) < 0)
+                {
+                    jungleCamp.nextRespawnTime = 0;
+                }
+            }
+        }
+
+        private static void EmptyCamp(BinaryReader b)
+        {
+            int nwID = 0;
+            int cID = 0;
+            byte emptyType = 0;
+            byte[] h = b.ReadBytes(4);
+            nwID = BitConverter.ToInt32(h, 0);
+
+            h = b.ReadBytes(4);
+            cID = BitConverter.ToInt32(h, 0);
+
+            emptyType = b.ReadByte();
+            UpdateCamps(nwID, cID, emptyType);
+        }
+
+        static void Game_OnGameProcessPacket(GamePacketProcessEventArgs args)
+        {
+                try
+                {
+                    MemoryStream stream = new MemoryStream(args.PacketData);
+                    using (BinaryReader b = new BinaryReader(stream))
+                    {
+                        Boolean targetPKT = false;
+                        int pos = 0;
+                        int length = (int) b.BaseStream.Length;
+                        while (pos < length)
+                        {
+                            int v = b.ReadInt32();
+                            if (v == 194)
+                            {
+                                byte[] h = b.ReadBytes(1);
+                                EmptyCamp(b);
+                            }
+                            pos += sizeof (int);
+                        }
+                    }
+                }
+                catch (EndOfStreamException e)
+                {
+                }
         }
     }
 }
