@@ -18,27 +18,32 @@ namespace JungleLib
 
         public class JungleMobs
         {
-            public JungleMobs(String name, bool smite, bool buff)
+            public JungleMobs(String name, bool smite, bool buff, bool boss, int mapID)
             {
                 this.name = name;
                 this.smite = smite;
                 this.buff = buff;
+                this.boss = boss;
+                this.mapID = mapID;
             }
 
             public String name;
             public bool smite;
             public bool buff;
+            public bool boss;
+            public int mapID;
         }
 
         public class JungleCamps
         {
-            public JungleCamps(String name, GameObjectTeam team, int campID, int spawnTime, int respawnTime, Vector3 mapPosition, Vector3 minimapPosition, JungleMobs[] creeps)
+            public JungleCamps(String name, GameObjectTeam team, int campID, int spawnTime, int respawnTime, int mapID, Vector3 mapPosition, Vector3 minimapPosition, JungleMobs[] creeps)
             {
                 this.name = name;
                 this.team = team;
                 this.campID = campID;
                 this.spawnTime = spawnTime;
                 this.respawnTime = respawnTime;
+                this.mapID = mapID;
                 this.mapPosition = mapPosition;
                 this.minimapPosition = minimapPosition;
                 this.creeps = creeps;
@@ -51,9 +56,15 @@ namespace JungleLib
             public int spawnTime;
             public int respawnTime;
             public int nextRespawnTime;
+            public int mapID;
             public Vector3 mapPosition;
             public Vector3 minimapPosition;
             public JungleMobs[] creeps;
+        }
+
+        static Jungle()
+        {
+            InitJungleMobs();
         }
 
         protected static void DebugMode()
@@ -83,11 +94,23 @@ namespace JungleLib
             return false;
         }
 
+        public static bool IsBossMob(Obj_AI_Minion jungleBossMob)
+        {
+            foreach (JungleMobs jungleMob in jungleMobs)
+            {
+                if (jungleBossMob.SkinName.Contains(jungleMob.name))
+                {
+                    return jungleMob.boss;
+                }
+            }
+            return false;
+        }
+
         public static bool HasBuff(Obj_AI_Minion jungleBigMob)
         {
             foreach (JungleMobs jungleMob in jungleMobs)
             {
-                if (jungleBigMob.Name.Contains(jungleMob.name))
+                if (jungleBigMob.SkinName.Contains(jungleMob.name))
                 {
                     return jungleMob.buff;
                 }
@@ -196,34 +219,35 @@ namespace JungleLib
             {
                 Obj_AI_Base_OnCreate(objAiMinion, new EventArgs());
             }
-            jungleMobs.Add(new JungleMobs("GreatWraith",    true,   false));
-            jungleMobs.Add(new JungleMobs("AncientGolem",   true,   true));
-            jungleMobs.Add(new JungleMobs("GiantWolf",      true,   false));
-            jungleMobs.Add(new JungleMobs("Wraith",         true,   false));
-            jungleMobs.Add(new JungleMobs("LizardElder",    true,   true));
-            jungleMobs.Add(new JungleMobs("Golem",          true,   false));
-            jungleMobs.Add(new JungleMobs("Worm",           true,   true));
-            jungleMobs.Add(new JungleMobs("Dragon",         true,   false));
-            jungleMobs.Add(new JungleMobs("Wight",          true,   false));
-            jungleMobs.Add(new JungleMobs("YoungLizard",    false,  false));
-            jungleMobs.Add(new JungleMobs("Wolf",           false,  false));
-            jungleMobs.Add(new JungleMobs("LesserWraith",   false,  false));
-            jungleMobs.Add(new JungleMobs("SmallGolem",     false,  false));
+            jungleMobs.Add(new JungleMobs("GreatWraith", true, false, false, 0));
+            jungleMobs.Add(new JungleMobs("AncientGolem", true, true, false, 0));
+            jungleMobs.Add(new JungleMobs("GiantWolf", true, false, false, 0));
+            jungleMobs.Add(new JungleMobs("Wraith", true, false, false, 0));
+            jungleMobs.Add(new JungleMobs("LizardElder", true, true, false, 0));
+            jungleMobs.Add(new JungleMobs("Golem", true, false, false, 0));
+            jungleMobs.Add(new JungleMobs("Worm", true, true, true, 0));
+            jungleMobs.Add(new JungleMobs("Dragon", true, false, true, 0));
+            jungleMobs.Add(new JungleMobs("Wight", true, false, false, 0));
+            jungleMobs.Add(new JungleMobs("YoungLizard", false, false, false, 0));
+            jungleMobs.Add(new JungleMobs("Wolf", false, false, false, 0));
+            jungleMobs.Add(new JungleMobs("LesserWraith", false, false, false, 0));
+            jungleMobs.Add(new JungleMobs("SmallGolem", false, false, false, 0));
+            jungleMobs.Add(new JungleMobs("TT_Spiderboss", true, true, true, 1)); //Wenn map eingefügt ist IDS anpassen und Cmap TT hinzufügen
 
-            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Order, 1, 115, 300, new Vector3(3570, 7670, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
-            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Order, 2, 125, 50, new Vector3(3430, 6300, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
-            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Order, 3, 125, 50, new Vector3(6540, 5230, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
-            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Order, 4, 115, 300, new Vector3(7370, 3830, 58), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
-            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Order, 5, 125, 50, new Vector3(7990, 2550, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
-            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Order, 13, 125, 50, new Vector3(12266, 6215, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
-            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Chaos, 7, 115, 300, new Vector3(10455, 6800, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
-            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Chaos, 8, 125, 50, new Vector3(10570, 8150, 63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
-            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Chaos, 9, 125, 50, new Vector3(7465, 9220, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
-            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Chaos, 10, 115, 300, new Vector3(6620, 10637, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
-            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Chaos, 11, 125, 50, new Vector3(6010, 11920, 40), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
-            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Chaos, 14, 125, 50, new Vector3(1688, 8248, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
-            jungleCamps.Add(new JungleCamps("dragon", GameObjectTeam.Neutral, 6, 2 * 60 + 30, 360, new Vector3(9400, 4130, -61), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Dragon") }));
-            jungleCamps.Add(new JungleCamps("nashor", GameObjectTeam.Neutral, 12, 15 * 60, 420, new Vector3(4620, 10265, -63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Worm") }));
+            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Order, 1, 115, 300, 0, new Vector3(3570, 7670, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Order, 2, 125, 50, 0, new Vector3(3430, 6300, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
+            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Order, 3, 125, 50, 0, new Vector3(6540, 5230, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
+            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Order, 4, 115, 300, 0, new Vector3(7370, 3830, 58), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Order, 5, 125, 50, 0, new Vector3(7990, 2550, 54), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
+            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Order, 13, 125, 50, 0, new Vector3(12266, 6215, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
+            jungleCamps.Add(new JungleCamps("blue", GameObjectTeam.Chaos, 7, 115, 300, 0, new Vector3(10455, 6800, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("AncientGolem"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("wolves", GameObjectTeam.Chaos, 8, 125, 50, 0, new Vector3(10570, 8150, 63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("GiantWolf"), GetJungleMobByName("Wolf"), GetJungleMobByName("Wolf") }));
+            jungleCamps.Add(new JungleCamps("wraiths", GameObjectTeam.Chaos, 9, 125, 50, 0, new Vector3(7465, 9220, 56), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Wraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith"), GetJungleMobByName("LesserWraith") }));
+            jungleCamps.Add(new JungleCamps("red", GameObjectTeam.Chaos, 10, 115, 300, 0, new Vector3(6620, 10637, 55), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("LizardElder"), GetJungleMobByName("YoungLizard"), GetJungleMobByName("YoungLizard") }));
+            jungleCamps.Add(new JungleCamps("golems", GameObjectTeam.Chaos, 11, 125, 50, 0, new Vector3(6010, 11920, 40), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Golem"), GetJungleMobByName("SmallGolem") }));
+            jungleCamps.Add(new JungleCamps("wight", GameObjectTeam.Chaos, 14, 125, 50, 0, new Vector3(1688, 8248, 54), new Vector3(), new JungleMobs[] { GetJungleMobByName("Wight") }));
+            jungleCamps.Add(new JungleCamps("dragon", GameObjectTeam.Neutral, 6, 2 * 60 + 30, 360, 0, new Vector3(9400, 4130, -61), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Dragon") }));
+            jungleCamps.Add(new JungleCamps("nashor", GameObjectTeam.Neutral, 12, 15 * 60, 420, 0, new Vector3(4620, 10265, -63), new Vector3(3670, 7520, 54), new JungleMobs[] { GetJungleMobByName("Worm") }));
 
             foreach (JungleCamps jungleCamp in jungleCamps)
             {
