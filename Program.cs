@@ -171,6 +171,11 @@ namespace JungleLib
             return jungleCamps1;
         }
 
+        public static List<JungleCamps> GetJungleCamps()
+        {
+            return jungleCamps;
+        }
+
         static void Obj_AI_Base_OnCreate(GameObject sender, EventArgs args)
         {
             if (sender.IsValid && sender.Type == GameObjectType.obj_AI_Minion
